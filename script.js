@@ -66,6 +66,18 @@ async function decodeBlob(blob) {
   });
 }
 
+// 녹음된 그대로, 선택 구간만 재생. 매번 새 노드를 만들어 겹쳐 재생된다.
+function playBuffer(buffer, start, end) {
+  const ctx = resumeAudio();
+  if (!ctx) return null;
+  const src = ctx.createBufferSource();
+  src.buffer = buffer;
+  src.connect(ctx.destination);
+  const dur = Math.max(0.005, end - start);
+  src.start(0, start, dur);
+  return src;
+}
+
 // ---------- 패드 화면 ----------
 
 function buildPads() {
@@ -81,6 +93,14 @@ function buildPads() {
     grid.appendChild(el);
     padEls.push(el);
   }
+
+  // Pointer Events 로 마우스·터치를 한 번에 처리 (중복 재생 방지)
+  grid.addEventListener('pointerdown', (e) => {
+    const el = e.target.closest('.pad');
+    if (!el) return;
+    e.preventDefault();
+    pressPad(Number(el.dataset.index));
+  });
 }
 
 function renderPad(i) {
@@ -92,6 +112,19 @@ function renderPad(i) {
 
 function renderAllPads() {
   for (let i = 0; i < PAD_COUNT; i++) renderPad(i);
+}
+
+function pressPad(i) {
+  if (!state.started) return;
+  playPad(i);
+}
+
+function playPad(i) {
+  const pad = state.pads[i];
+  if (!pad || !pad.buffer) {
+    return;
+  }
+  playBuffer(pad.buffer, pad.start, pad.end);
 }
 
 // ---------- 모달 ----------
