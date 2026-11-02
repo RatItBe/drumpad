@@ -127,6 +127,18 @@ function playPad(i) {
   playBuffer(pad.buffer, pad.start, pad.end);
 }
 
+// ---------- 키보드 ----------
+
+function onKeyDown(e) {
+  if (e.repeat) return;
+  if (!state.started || state.modal) return;
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const i = KEY_CODES.indexOf(e.code);   // 물리 키 위치: 한글 입력 상태에서도 동작
+  if (i < 0) return;
+  e.preventDefault();
+  pressPad(i);
+}
+
 // ---------- 모달 ----------
 
 function openModal(name) {
@@ -337,6 +349,8 @@ function init() {
       if (e.target === e.currentTarget) cancelModal();
     });
   }
+
+  document.addEventListener('keydown', onKeyDown);
   // 어디를 눌러도 오디오 컨텍스트를 깨운다 (사파리 대비)
   document.addEventListener('pointerdown', () => { if (state.started) resumeAudio(); }, true);
 }
