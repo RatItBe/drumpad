@@ -532,13 +532,11 @@ async function onRecordingStop() {
   }
   if (state.modal !== 'record' || rec.cancelled) return;
 
-  // 앞뒤 무음을 잘라 바로 패드에 넣는다
+  // 바로 패드에 넣지 않고, 자동 자르기 위치가 잡힌 편집 화면을 먼저 보여준다.
+  // 저장을 눌러야 패드에 들어간다.
   const [start, end] = findTrim(buffer);
-  const i = rec.index;
-  state.pads[i] = { blob, buffer, start, end };
-  renderPad(i);
   closeModal();
-  await savePad(i);
+  openTrim(rec.index, { blob, buffer, autoStart: start, autoEnd: end });
 }
 
 // ---------- 구간 편집 ----------
@@ -550,16 +548,29 @@ const trim = {
   end: 0,
   dragging: null,     // 'start' | 'end' | null
   previewSrc: null,
+  pending: null,      // 방금 녹음한 것(아직 패드에 안 들어감): { blob, buffer, autoStart, autoEnd }
 };
 
-function openTrim(i) {
+// pendingRec 이 있으면 "녹음 직후 확인" 화면, 없으면 이미 저장된 패드의 구간 편집
+function openTrim(i, pendingRec) {
   trim.index = i;
+  trim.pending = pendingRec || null;
+  if (pendingRec) {
+    trim.buffer = pendingRec.buffer;
+    trim.start = pendingRec.autoStart;
+    trim.end = pendingRec.autoEnd;
+    $('trim-title').textContent = `패드 ${KEY_LABELS[i]} 녹음 확인`;
+  } else {
     const pad = state.pads[i];
     if (!pad || !pad.buffer) return;
     trim.buffer = pad.buffer;
     trim.start = pad.start;
     trim.end = pad.end;
     $('trim-title').textContent = `패드 ${KEY_LABELS[i]} 구간 편집`;
+  }
+  $('trim-hint').textContent = pendingRec
+    ? '앞뒤 무음을 자동으로 잘랐습니다. 막대를 끌어 구간을 조절하고, 재생으로 들어본 뒤 저장하세요.'
+    : '막대를 끌어 구간을 조절하세요. 원본은 그대로 남습니다.';
   openModal('trim');
   requestAnimationFrame(() => {
     drawWave();
@@ -569,6 +580,7 @@ function openTrim(i) {
 
 function closeTrim() {
   stopPreview();
+  trim.pending = null;   // 녹음 직후 화면에서 취소하면 그 녹음은 버린다
   closeModal();
 }
 
@@ -676,6 +688,18 @@ function setupTrimHandles() {
   });
   const saveTrim = async () => {
     const i = trim.index;
+    const p = trim.pending;
+    if (p) {
+      // 녹음 직후: 이제 패드에 넣는다
+      state.pads[i] = {
+        blob: p.blob, buffer: p.buffer,
+        start: trim.start, end: trim.end,
+      };
+      renderPad(i);
+      closeTrim();
+      await savePad(i);
+      return;
+    }
     const pad = state.pads[i];
     if (pad) {
       pad.start = trim.start;    // 원본은 그대로, 시작·끝점만 저장
