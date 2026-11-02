@@ -19,6 +19,7 @@ description: 보이스 드럼패드(drumpad) 저장소에서 docs/TODO.md 의 �
 
 - 순수 HTML / CSS / JavaScript 만 쓴다. 빌드 도구·프레임워크·서버를 들이지 않는다.
 - 녹음·재생·입력·저장 코드를 건드리면 `drumpad-audio-rules` 스킬의 규칙을 먼저 확인한다.
+- 화면 모양을 새로 잡거나 크게 바꾸면 `frontend-design` 스킬(Anthropic 공개 스킬)을 먼저 읽는다. 생성된 티가 나는 기본값을 피하는 기준이 들어 있다.
 
 ## 3. 확인
 
