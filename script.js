@@ -270,7 +270,11 @@ function openMenu(i) {
     b.addEventListener('click', fn);
     actions.appendChild(b);
   };
+  if (!pad) {
     add('녹음', 'btn-primary', () => { closeModal(); openRecord(i); });
+  } else {
+    add('다시 녹음', 'btn-primary', () => { closeModal(); openRecord(i); });
+  }
   openModal('menu');
 }
 
