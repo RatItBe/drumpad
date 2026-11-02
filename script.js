@@ -430,12 +430,21 @@ async function decodeMissing() {
   }
 }
 
+function requestPersist() {
+  if (navigator.storage && navigator.storage.persist) {
+    navigator.storage.persist().then((ok) => {
+      console.log('영구 저장', ok ? '허용' : '미허용');
+    }).catch(() => {});
+  }
+}
+
 // ---------- 시작 ----------
 
 async function onStart() {
   resumeAudio();
   state.started = true;
   $('start-screen').hidden = true;
+  requestPersist();
   await decodeMissing();   // 시작 전에 해석하지 못한 패드가 있으면 다시 시도
 }
 
