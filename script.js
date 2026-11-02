@@ -189,7 +189,7 @@ function buildPads() {
   for (let i = 0; i < PAD_COUNT; i++) {
     const el = document.createElement('button');
     el.type = 'button';
-    el.className = 'pad empty';
+    el.className = `pad empty row-${Math.floor(i / 4) + 1}`;   // 줄마다 색이 다르다 (키보드 줄 표시)
     el.tabIndex = -1;
     el.dataset.index = String(i);
     el.innerHTML = `<span class="pad-key">${KEY_LABELS[i]}</span><span class="pad-info"></span>`;
@@ -632,7 +632,7 @@ function drawWave() {
   const data = buf.getChannelData(0);
   const len = data.length;
   const mid = h / 2;
-  ctx.strokeStyle = '#8fb3ff';
+  ctx.strokeStyle = '#cdbf9a';   // 파형: 크림색을 조금 어둡게
   ctx.lineWidth = 1;
   ctx.beginPath();
   for (let x = 0; x < w; x++) {
@@ -650,7 +650,7 @@ function drawWave() {
     ctx.lineTo(x + 0.5, mid - min * mid * 0.95 + 1);
   }
   ctx.stroke();
-  ctx.strokeStyle = '#3a3e48';
+  ctx.strokeStyle = '#45434b';
   ctx.beginPath();
   ctx.moveTo(0, mid + 0.5);
   ctx.lineTo(w, mid + 0.5);

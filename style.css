@@ -1,18 +1,31 @@
-/* 보이스 드럼패드 */
+/* 보이스 드럼패드
+   디자인 방향 (frontend-design 스킬 기준, TODO 9-3):
+   - 소리를 담는 장난감 악기. 기억에 남을 요소는 패드 하나뿐이고, 나머지는 조용하게.
+   - 바탕은 푸른 기 없는 따뜻한 차콜. 채워진 패드는 키보드 줄마다 다른 색 (색약 안전 팔레트, Okabe-Ito).
+     줄 색은 장식이 아니라 "어느 키보드 줄인지"를 알려 준다. 빈 패드는 점선 테두리라 색 없이도 구분된다.
+   - 패드는 아래 모서리가 두꺼운 고무 키. 누르면 실제로 내려간다 (사용자 동작에 답하는 움직임만 쓴다).
+   - 둥글기는 역할마다 다르다: 패드 18px, 창 22px, 버튼 10px, 입력칸 8px, 띠 6px. */
 
 :root {
-  --bg: #1b1d22;
-  --fg: #f2f2f2;
-  --muted: #8a8f99;
-  --panel: #262932;
-  --pad-empty: #2b2e36;
-  --pad-empty-border: #3a3e48;
-  --pad-filled: #3f7bd9;
-  --pad-filled-dark: #2b5aa8;
-  --accent: #ff5a5f;
-  --edit: #e8a33d;
-  --edit-dark: #8a5d14;
-  --danger: #d9534f;
+  --bg: #232226;
+  --bg-deep: #1c1b1f;
+  --panel: #2f2e34;
+  --line: #45434b;
+  --fg: #f3efe6;
+  --muted: #9d99a3;
+  --cream: #f3e9d2;
+  --danger: #d8463c;
+  --rec: #ff4d3d;
+
+  /* 키보드 줄 색: 1줄 주황, 2줄 하늘, 3줄 청록, 4줄 자주 */
+  --row1: #e69f00; --row1-edge: #a06f00;
+  --row2: #56b4e9; --row2-edge: #2f7fae;
+  --row3: #1fae87; --row3-edge: #137a5e;
+  --row4: #cc79a7; --row4-edge: #964f78;
+
+  --pad-empty: #2b2a30;
+  --pad-empty-edge: #141317;
+  --pad-radius: 18px;
 }
 
 * { box-sizing: border-box; }
@@ -25,7 +38,8 @@ html, body {
   min-height: 100%;
   background: var(--bg);
   color: var(--fg);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", "Malgun Gothic", sans-serif;
+  line-height: 1.45;
   touch-action: manipulation;          /* 더블탭 확대 방지 */
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior: none;
@@ -38,14 +52,14 @@ html, body {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 12px 16px;
-  transition: background 0.2s;
+  padding: 14px 16px 10px;
 }
 
 .app-header h1 {
   margin: 0;
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 600;
+  letter-spacing: -0.01em;
   white-space: nowrap;
 }
 
@@ -54,35 +68,39 @@ html, body {
   gap: 8px;
 }
 
+/* 수정 모드: 헤더 위에 줄무늬 띠 (색에 기대지 않는 표시) */
 body.edit-mode .app-header {
-  background: var(--edit-dark);
+  border-top: 8px solid transparent;
+  border-image: repeating-linear-gradient(135deg, var(--cream) 0 10px, var(--bg-deep) 10px 20px) 8;
 }
 
 /* ---------- 버튼 ---------- */
 
 .btn {
   appearance: none;
-  border: 1px solid #4a4f5a;
-  background: #343845;
+  border: 1px solid var(--line);
+  background: var(--panel);
   color: var(--fg);
   font: inherit;
   font-size: 15px;
-  padding: 8px 14px;
-  border-radius: 8px;
+  line-height: 1.2;
+  padding: 9px 14px;
+  border-radius: 10px;
   cursor: pointer;
   user-select: none;
   -webkit-user-select: none;
 }
-.btn:active { filter: brightness(1.25); }
-.btn-primary { background: var(--pad-filled); border-color: var(--pad-filled); }
-.btn-danger { background: var(--danger); border-color: var(--danger); }
+.btn:active { transform: translateY(1px); }
+.btn:focus-visible { outline: 2px solid var(--cream); outline-offset: 2px; }
+.btn-primary { background: var(--cream); border-color: var(--cream); color: var(--bg-deep); font-weight: 600; }
+.btn-danger { background: var(--danger); border-color: var(--danger); color: #fff; }
 .btn-ghost { background: transparent; }
-.btn-small { padding: 4px 10px; font-size: 13px; }
-.btn-big { font-size: 20px; padding: 14px 32px; }
-.btn.active { background: var(--edit); border-color: var(--edit); color: #1b1d22; font-weight: 600; }
+.btn-small { padding: 5px 10px; font-size: 13px; }
+.btn-big { font-size: 20px; padding: 14px 36px; border-radius: 14px; }
+.btn.active { background: var(--cream); border-color: var(--cream); color: var(--bg-deep); font-weight: 600; }
 .btn:disabled { opacity: 0.5; cursor: default; }
 
-/* ---------- 배너 ---------- */
+/* ---------- 띠 ---------- */
 
 .banner {
   display: flex;
@@ -91,39 +109,44 @@ body.edit-mode .app-header {
   gap: 12px;
   margin: 0 16px 8px;
   padding: 8px 12px;
-  border-radius: 8px;
+  border-radius: 6px;
   font-size: 14px;
   text-align: center;
 }
-.edit-banner { background: var(--edit); color: #1b1d22; font-weight: 600; }
-.move-banner { background: #2f5f9f; }
+.edit-banner { background: var(--cream); color: var(--bg-deep); font-weight: 600; }
+.move-banner { background: var(--panel); border: 1px dashed var(--cream); }
 
 /* ---------- 패드 ---------- */
 
 .app-main {
-  padding: 0 16px 16px;
+  padding: 4px 16px 16px;
 }
 
 .pad-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  width: min(100%, 560px, calc(100vh - 170px));
+  gap: 10px;
+  width: min(100%, 560px, calc(100vh - 190px));
   margin: 0 auto;
-  padding: 4px;
-  border-radius: 12px;
+  padding: 6px;
+  border-radius: 24px;
   border: 2px dashed transparent;
 }
-body.edit-mode .pad-grid { border-color: var(--edit); }
+body.edit-mode .pad-grid { border-color: var(--cream); }
 
 .pad {
+  --face: var(--pad-empty);
+  --edge: var(--pad-empty-edge);
+  --ink: var(--muted);
   position: relative;
   aspect-ratio: 1 / 1;
   appearance: none;
-  border: 2px solid var(--pad-empty-border);
-  border-radius: 12px;
-  background: var(--pad-empty);
-  color: var(--muted);
+  border: 0;
+  border-radius: var(--pad-radius);
+  background: var(--face);
+  color: var(--ink);
+  box-shadow: 0 6px 0 var(--edge);          /* 고무 키의 아래 모서리 */
+  margin-bottom: 6px;
   font: inherit;
   padding: 0;
   cursor: pointer;
@@ -131,7 +154,7 @@ body.edit-mode .pad-grid { border-color: var(--edit); }
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 2px;
   touch-action: none;                   /* 터치 스크롤/확대 차단 */
   user-select: none;
   -webkit-user-select: none;
@@ -139,15 +162,26 @@ body.edit-mode .pad-grid { border-color: var(--edit); }
   outline: none;
 }
 
-.pad.filled {
-  background: linear-gradient(180deg, var(--pad-filled), var(--pad-filled-dark));
-  border-color: var(--pad-filled);
-  color: #fff;
+/* 빈 패드: 점선 테두리. 색을 못 봐도 구분된다 */
+.pad.empty::after {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border: 2px dashed var(--line);
+  border-radius: calc(var(--pad-radius) - 7px);
+  pointer-events: none;
 }
 
+.pad.filled { --ink: var(--bg-deep); }
+.pad.filled.row-1 { --face: var(--row1); --edge: var(--row1-edge); }
+.pad.filled.row-2 { --face: var(--row2); --edge: var(--row2-edge); }
+.pad.filled.row-3 { --face: var(--row3); --edge: var(--row3-edge); }
+.pad.filled.row-4 { --face: var(--row4); --edge: var(--row4-edge); }
+
 .pad-key {
-  font-size: clamp(20px, 6vw, 34px);
-  font-weight: 700;
+  font-family: "Fredoka", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: clamp(26px, 7vw, 40px);
+  font-weight: 600;
   line-height: 1;
 }
 
@@ -161,11 +195,11 @@ body.edit-mode .pad-grid { border-color: var(--edit); }
   white-space: nowrap;
 }
 
-/* 눌림 효과 */
-.pad.hit { animation: pad-hit 0.14s ease-out; }
+/* 눌림: 키가 아래로 내려갔다 올라온다 */
+.pad.hit { animation: pad-hit 0.16s ease-out; }
 @keyframes pad-hit {
-  0%   { transform: scale(0.92); filter: brightness(1.7); }
-  100% { transform: scale(1);    filter: brightness(1); }
+  0%   { transform: translateY(5px); box-shadow: 0 1px 0 var(--edge); filter: brightness(1.15); }
+  100% { transform: translateY(0);   box-shadow: 0 6px 0 var(--edge); filter: brightness(1); }
 }
 
 /* 빈 패드 흔들림 */
@@ -180,15 +214,14 @@ body.edit-mode .pad-grid { border-color: var(--edit); }
 
 /* 위치 바꾸기 중 원래 패드 */
 .pad.move-source {
-  border-color: #fff;
-  box-shadow: 0 0 0 3px var(--edit);
+  box-shadow: 0 6px 0 var(--edge), 0 0 0 4px var(--cream);
 }
 
 .hint {
   text-align: center;
   color: var(--muted);
   font-size: 13px;
-  margin: 12px 0 0;
+  margin: 10px 0 0;
 }
 
 /* ---------- 오버레이 / 모달 ---------- */
@@ -203,29 +236,36 @@ body.edit-mode .pad-grid { border-color: var(--edit); }
   z-index: 10;
 }
 
+/* 시작 화면: 뒤에 패드가 비쳐 보인다 */
 .start-screen {
-  background: var(--bg);
+  background: rgba(35, 34, 38, 0.82);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   z-index: 20;
 }
 .start-box {
   text-align: center;
   max-width: 360px;
 }
-.start-box h1 { font-size: 28px; margin: 0 0 12px; }
-.start-box p { color: var(--muted); margin: 0 0 24px; line-height: 1.5; }
+.start-box h1 {
+  font-size: 30px;
+  margin: 0 0 10px;
+  letter-spacing: -0.02em;
+}
+.start-box p { color: var(--muted); margin: 0 0 24px; line-height: 1.6; }
 
-.modal { background: rgba(0, 0, 0, 0.6); }
+.modal { background: rgba(28, 27, 31, 0.7); }
 
 .modal-box {
   background: var(--panel);
-  border-radius: 14px;
-  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 22px 20px 20px;
   width: 100%;
   max-width: 340px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
 }
 .modal-box.modal-wide { max-width: 560px; }
-.modal-box h2 { margin: 0 0 14px; font-size: 18px; }
+.modal-box h2 { margin: 0 0 12px; font-size: 18px; font-weight: 600; }
 
 .menu-actions {
   display: flex;
@@ -245,12 +285,12 @@ body.edit-mode .pad-grid { border-color: var(--edit); }
 .status {
   color: var(--muted);
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 1.55;
   margin: 8px 0 14px;
   white-space: pre-line;
 }
-.status.error { color: #ff8a8e; }
-#trim-hint { margin: -6px 0 10px; }
+.status.error { color: #ff9a92; }
+#trim-hint { margin: -4px 0 10px; }
 
 .field {
   display: flex;
@@ -266,12 +306,12 @@ body.edit-mode .pad-grid { border-color: var(--edit); }
   font: inherit;
   font-size: 16px;            /* 아이폰 자동 확대 방지 (16px 미만이면 확대됨) */
   color: var(--fg);
-  background: #15171c;
-  border: 1px solid #4a4f5a;
+  background: var(--bg-deep);
+  border: 1px solid var(--line);
   border-radius: 8px;
   padding: 8px 10px;
 }
-.field input:focus { outline: 2px solid var(--pad-filled); border-color: transparent; }
+.field input:focus { outline: 2px solid var(--cream); border-color: transparent; }
 
 /* ---------- 녹음 ---------- */
 
@@ -281,19 +321,19 @@ body.edit-mode .pad-grid { border-color: var(--edit); }
   gap: 10px;
   font-size: 22px;
   font-variant-numeric: tabular-nums;
-  padding: 10px 0;
+  padding: 8px 0;
 }
 .rec-dot {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #555;
+  background: var(--line);
 }
 .record-indicator.recording .rec-dot {
-  background: var(--accent);
+  background: var(--rec);
   animation: rec-blink 1s infinite;
 }
-.record-indicator.recording { color: var(--accent); }
+.record-indicator.recording { color: var(--rec); }
 @keyframes rec-blink {
   0%, 100% { opacity: 1; }
   50%      { opacity: 0.25; }
@@ -304,8 +344,8 @@ body.edit-mode .pad-grid { border-color: var(--edit); }
 .wave-wrap {
   position: relative;
   height: 150px;
-  background: #15171c;
-  border-radius: 8px;
+  background: var(--bg-deep);
+  border-radius: 10px;
   overflow: hidden;
   touch-action: none;
   user-select: none;
@@ -322,7 +362,7 @@ body.edit-mode .pad-grid { border-color: var(--edit); }
   position: absolute;
   top: 0;
   bottom: 0;
-  background: rgba(63, 123, 217, 0.25);
+  background: rgba(243, 233, 210, 0.14);
   pointer-events: none;
 }
 .handle {
@@ -340,7 +380,7 @@ body.edit-mode .pad-grid { border-color: var(--edit); }
   bottom: 0;
   left: 12px;
   width: 4px;
-  background: var(--edit);
+  background: var(--cream);
   border-radius: 2px;
 }
 .handle::after {
@@ -350,7 +390,7 @@ body.edit-mode .pad-grid { border-color: var(--edit); }
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: var(--edit);
+  background: var(--cream);
 }
 .handle-start::after { top: 4px; }
 .handle-end::after   { bottom: 4px; }
@@ -358,5 +398,9 @@ body.edit-mode .pad-grid { border-color: var(--edit); }
 
 @media (max-width: 420px) {
   .app-header h1 { font-size: 16px; }
-  .btn { font-size: 14px; padding: 7px 10px; }
+  .btn { font-size: 14px; padding: 8px 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pad.hit, .pad.shake, .record-indicator.recording .rec-dot { animation: none; }
 }
