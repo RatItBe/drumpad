@@ -87,6 +87,29 @@ html, body {
   outline: none;
 }
 
+.pad-key {
+  font-size: clamp(20px, 6vw, 34px);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.pad-info {
+  font-size: clamp(12px, 3.2vw, 15px);
+  font-weight: 600;
+  min-height: 14px;
+  max-width: 92%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hint {
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  margin: 12px 0 0;
+}
+
 @media (max-width: 420px) {
   .app-header h1 { font-size: 16px; }
 }

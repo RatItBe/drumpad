@@ -3,7 +3,16 @@
 
 // ---------- 상수 ----------
 
-const PAD_COUNT = 16;
+// 키보드 배치 (event.code 기준, 왼쪽 위부터 행 순서)
+const KEY_LAYOUT = [
+  ['Digit4', 'Digit5', 'Digit6', 'Digit7'],
+  ['KeyR',   'KeyT',   'KeyY',   'KeyU'],
+  ['KeyF',   'KeyG',   'KeyH',   'KeyJ'],
+  ['KeyV',   'KeyB',   'KeyN',   'KeyM'],
+];
+const KEY_CODES = KEY_LAYOUT.flat();
+const KEY_LABELS = KEY_CODES.map((c) => c.replace(/^(Key|Digit)/, ''));
+const PAD_COUNT = KEY_CODES.length;
 
 // ---------- 상태 ----------
 
@@ -26,6 +35,7 @@ function buildPads() {
     el.className = 'pad empty';
     el.tabIndex = -1;
     el.dataset.index = String(i);
+    el.innerHTML = `<span class="pad-key">${KEY_LABELS[i]}</span><span class="pad-info"></span>`;
     grid.appendChild(el);
     padEls.push(el);
   }
