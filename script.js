@@ -25,7 +25,7 @@ const DB_STORE = 'pads';
 // ---------- 상태 ----------
 
 const state = {
-  // 각 칸: null 또는 { blob, buffer, start, end }
+  // 각 칸: null 또는 { blob, buffer, start, end, name }
   pads: new Array(PAD_COUNT).fill(null),
   audioCtx: null,
   started: false,
@@ -83,6 +83,7 @@ async function savePad(index) {
         blob: pad.blob,
         start: pad.start,
         end: pad.end,
+        name: pad.name || '',
       });
     } else {
       await dbDelete(index);
@@ -218,6 +219,14 @@ function renderPad(i) {
   const pad = state.pads[i];
   el.classList.toggle('filled', !!pad);
   el.classList.toggle('empty', !pad);
+  // 이름이 있으면 키 글자 아래에 이름, 없으면 키 글자만
+  el.querySelector('.pad-info').textContent = pad && pad.name ? pad.name : '';
+}
+
+// "R" 또는 "R · 박수" 처럼 패드를 부르는 이름
+function padLabel(i) {
+  const pad = state.pads[i];
+  return pad && pad.name ? `${KEY_LABELS[i]} · ${pad.name}` : KEY_LABELS[i];
 }
 
 function renderAllPads() {
@@ -305,7 +314,7 @@ function setEditMode(on) {
 
 function openMenu(i) {
   const pad = state.pads[i];
-  $('menu-title').textContent = `패드 ${KEY_LABELS[i]} ${pad ? '(채워짐)' : '(비어 있음)'}`;
+  $('menu-title').textContent = `패드 ${padLabel(i)} ${pad ? '(채워짐)' : '(비어 있음)'}`;
   const actions = $('menu-actions');
   actions.innerHTML = '';
   const add = (label, cls, fn) => {
@@ -349,7 +358,7 @@ async function clearAll() {
 function startMove(i) {
   state.moveFrom = i;
   padEls[i].classList.add('move-source');
-  $('move-text').textContent = `패드 ${KEY_LABELS[i]}의 소리를 옮깁니다. 바꿀 자리를 누르세요.`;
+  $('move-text').textContent = `패드 ${padLabel(i)}의 소리를 옮깁니다. 바꿀 자리를 누르세요.`;
   $('move-banner').hidden = false;
 }
 
@@ -548,7 +557,7 @@ const trim = {
   end: 0,
   dragging: null,     // 'start' | 'end' | null
   previewSrc: null,
-  pending: null,      // 방금 녹음한 것(아직 패드에 안 들어감): { blob, buffer, autoStart, autoEnd }
+  pending: null,      // 방금 녹음한 것(아직 패드에 안 들어감): { blob, buffer, autoStart, autoEnd, name }
 };
 
 // pendingRec 이 있으면 "녹음 직후 확인" 화면, 없으면 이미 저장된 패드의 구간 편집
@@ -560,13 +569,15 @@ function openTrim(i, pendingRec) {
     trim.start = pendingRec.autoStart;
     trim.end = pendingRec.autoEnd;
     $('trim-title').textContent = `패드 ${KEY_LABELS[i]} 녹음 확인`;
+    $('trim-name').value = pendingRec.name || '';
   } else {
     const pad = state.pads[i];
     if (!pad || !pad.buffer) return;
     trim.buffer = pad.buffer;
     trim.start = pad.start;
     trim.end = pad.end;
-    $('trim-title').textContent = `패드 ${KEY_LABELS[i]} 구간 편집`;
+    $('trim-title').textContent = `패드 ${padLabel(i)} 구간 편집`;
+    $('trim-name').value = pad.name || '';
   }
   $('trim-rerecord-btn').hidden = !pendingRec;
   $('trim-hint').textContent = pendingRec
@@ -690,11 +701,13 @@ function setupTrimHandles() {
   const saveTrim = async () => {
     const i = trim.index;
     const p = trim.pending;
+    const name = $('trim-name').value.trim();   // 비워두면 이름 없음
     if (p) {
       // 녹음 직후: 이제 패드에 넣는다
       state.pads[i] = {
         blob: p.blob, buffer: p.buffer,
         start: trim.start, end: trim.end,
+        name,
       };
       renderPad(i);
       closeTrim();
@@ -703,8 +716,9 @@ function setupTrimHandles() {
     }
     const pad = state.pads[i];
     if (pad) {
-      pad.start = trim.start;    // 원본은 그대로, 시작·끝점만 저장
+      pad.start = trim.start;    // 원본은 그대로, 시작·끝점·이름만 저장
       pad.end = trim.end;
+      pad.name = name;
       renderPad(i);
       closeTrim();
       await savePad(i);
@@ -713,6 +727,12 @@ function setupTrimHandles() {
     }
   };
   $('trim-save-btn').addEventListener('click', saveTrim);
+  $('trim-name').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      saveTrim();
+    }
+  });
   $('trim-cancel-btn').addEventListener('click', closeTrim);
   $('trim-rerecord-btn').addEventListener('click', () => {
     const i = trim.index;
@@ -743,6 +763,7 @@ async function loadPads() {
       blob: r.blob,
       start: r.start,
       end: r.end,
+      name: r.name || '',
       buffer: null,
     };
   }
