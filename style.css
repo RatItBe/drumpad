@@ -332,6 +332,7 @@ body.edit-mode .pad-grid { border-color: var(--edit); }
 }
 .handle-start::after { top: 4px; }
 .handle-end::after   { bottom: 4px; }
+.handle.dragging span, .handle.dragging::after { background: #fff; }
 
 @media (max-width: 420px) {
   .app-header h1 { font-size: 16px; }

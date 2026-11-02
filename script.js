@@ -15,6 +15,7 @@ const KEY_LABELS = KEY_CODES.map((c) => c.replace(/^(Key|Digit)/, ''));
 const PAD_COUNT = KEY_CODES.length;
 
 const MAX_RECORD_MS = 5000;        // 최대 녹음 길이
+const TRIM_MIN_GAP_SEC = 0.02;     // 시작점과 끝점 최소 간격
 
 const DB_NAME = 'voice-drumpad';
 const DB_VERSION = 1;
@@ -506,6 +507,7 @@ const trim = {
   buffer: null,
   start: 0,
   end: 0,
+  dragging: null,     // 'start' | 'end' | null
 };
 
 function openTrim(i) {
@@ -580,6 +582,40 @@ function layoutHandles() {
 }
 
 function setupTrimHandles() {
+  const wrap = $('wave-wrap');
+  const bind = (el, which) => {
+    el.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      trim.dragging = which;
+      el.classList.add('dragging');
+      el.setPointerCapture(e.pointerId);
+    });
+    el.addEventListener('pointermove', (e) => {
+      if (trim.dragging !== which) return;
+      const rect = wrap.getBoundingClientRect();
+      const x = Math.min(rect.width, Math.max(0, e.clientX - rect.left));
+      const t = (x / rect.width) * trim.buffer.duration;
+      if (which === 'start') {
+        trim.start = Math.min(t, trim.end - TRIM_MIN_GAP_SEC);   // 시작점은 끝점을 넘을 수 없다
+        trim.start = Math.max(0, trim.start);
+      } else {
+        trim.end = Math.max(t, trim.start + TRIM_MIN_GAP_SEC);
+        trim.end = Math.min(trim.buffer.duration, trim.end);
+      }
+      layoutHandles();
+    });
+    const end = (e) => {
+      if (trim.dragging !== which) return;
+      trim.dragging = null;
+      el.classList.remove('dragging');
+      try { el.releasePointerCapture(e.pointerId); } catch (err) { /* 무시 */ }
+    };
+    el.addEventListener('pointerup', end);
+    el.addEventListener('pointercancel', end);
+  };
+  bind($('handle-start'), 'start');
+  bind($('handle-end'), 'end');
+
   $('trim-cancel-btn').addEventListener('click', closeModal);
   window.addEventListener('resize', () => {
     if (state.modal === 'trim') {
