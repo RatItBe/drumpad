@@ -26,6 +26,9 @@ html, body {
   background: var(--bg);
   color: var(--fg);
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+  touch-action: manipulation;          /* 더블탭 확대 방지 */
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
 }
 
 /* ---------- 헤더 ---------- */
@@ -105,6 +108,10 @@ html, body {
   align-items: center;
   justify-content: center;
   gap: 4px;
+  touch-action: none;                   /* 터치 스크롤/확대 차단 */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;          /* 길게 누르기 메뉴 차단 */
   outline: none;
 }
 

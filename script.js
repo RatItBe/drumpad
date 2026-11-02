@@ -101,6 +101,7 @@ function buildPads() {
     e.preventDefault();
     pressPad(Number(el.dataset.index));
   });
+  grid.addEventListener('contextmenu', (e) => e.preventDefault());
 }
 
 function renderPad(i) {
