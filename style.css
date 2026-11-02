@@ -54,6 +54,10 @@ html, body {
   gap: 8px;
 }
 
+body.edit-mode .app-header {
+  background: var(--edit-dark);
+}
+
 /* ---------- 버튼 ---------- */
 
 .btn {
@@ -73,7 +77,23 @@ html, body {
 .btn-primary { background: var(--pad-filled); border-color: var(--pad-filled); }
 .btn-ghost { background: transparent; }
 .btn-big { font-size: 20px; padding: 14px 32px; }
+.btn.active { background: var(--edit); border-color: var(--edit); color: #1b1d22; font-weight: 600; }
 .btn:disabled { opacity: 0.5; cursor: default; }
+
+/* ---------- 배너 ---------- */
+
+.banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 0 16px 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  text-align: center;
+}
+.edit-banner { background: var(--edit); color: #1b1d22; font-weight: 600; }
 
 /* ---------- 패드 ---------- */
 
@@ -91,6 +111,7 @@ html, body {
   border-radius: 12px;
   border: 2px dashed transparent;
 }
+body.edit-mode .pad-grid { border-color: var(--edit); }
 
 .pad {
   position: relative;

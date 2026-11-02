@@ -27,6 +27,7 @@ const state = {
   pads: new Array(PAD_COUNT).fill(null),
   audioCtx: null,
   started: false,
+  editMode: false,
   modal: null,         // 'menu' | 'record' | 'trim' | null
 };
 
@@ -225,6 +226,17 @@ function closeModal() {
 function cancelModal() {
   if (state.modal === 'record') cancelRecording();
   else closeModal();
+}
+
+// ---------- 수정 모드 ----------
+
+function setEditMode(on) {
+  state.editMode = on;
+  document.body.classList.toggle('edit-mode', on);
+  $('edit-banner').hidden = !on;
+  const btn = $('edit-toggle-btn');
+  btn.classList.toggle('active', on);
+  btn.textContent = on ? '수정 끝내기' : '수정 모드';
 }
 
 // ---------- 녹음 ----------
@@ -453,6 +465,7 @@ function init() {
   ensureAudioContext();    // 사용자 제스처 전엔 suspended 상태로 생성된다
 
   $('start-btn').addEventListener('click', onStart);
+  $('edit-toggle-btn').addEventListener('click', () => setEditMode(!state.editMode));
   $('record-btn').addEventListener('click', () => {
     if (rec.recording) stopRecording();
     else startRecording();

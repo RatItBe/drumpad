@@ -19,9 +19,13 @@
   <header class="app-header">
     <h1>보이스 드럼패드</h1>
     <div class="toolbar">
+      <button id="edit-toggle-btn" type="button" class="btn">수정 모드</button>
     </div>
   </header>
 
+  <div id="edit-banner" class="banner edit-banner" hidden>
+    수정 모드: 패드를 누르면 그 패드의 메뉴가 열립니다
+  </div>
 
   <main class="app-main">
     <section id="pad-grid" class="pad-grid" aria-label="패드"></section>
