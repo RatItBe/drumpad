@@ -87,6 +87,12 @@ html, body {
   outline: none;
 }
 
+.pad.filled {
+  background: linear-gradient(180deg, var(--pad-filled), var(--pad-filled-dark));
+  border-color: var(--pad-filled);
+  color: #fff;
+}
+
 .pad-key {
   font-size: clamp(20px, 6vw, 34px);
   font-weight: 700;

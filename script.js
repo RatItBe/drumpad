@@ -41,6 +41,17 @@ function buildPads() {
   }
 }
 
+function renderPad(i) {
+  const el = padEls[i];
+  const pad = state.pads[i];
+  el.classList.toggle('filled', !!pad);
+  el.classList.toggle('empty', !pad);
+}
+
+function renderAllPads() {
+  for (let i = 0; i < PAD_COUNT; i++) renderPad(i);
+}
+
 // ---------- 시작 ----------
 
 function init() {
