@@ -395,12 +395,48 @@ async function onRecordingStop() {
   await savePad(i);
 }
 
+// ---------- 저장 복원 ----------
+
+async function loadPads() {
+  let records = [];
+  try {
+    records = await dbGetAll();
+  } catch (err) {
+    console.error('IndexedDB 열기 실패', err);
+    return;
+  }
+  for (const r of records) {
+    if (r.index < 0 || r.index >= PAD_COUNT || !r.blob) continue;
+    state.pads[r.index] = {
+      blob: r.blob,
+      start: r.start,
+      end: r.end,
+      buffer: null,
+    };
+  }
+  renderAllPads();
+  await decodeMissing();
+}
+
+async function decodeMissing() {
+  for (let i = 0; i < PAD_COUNT; i++) {
+    const pad = state.pads[i];
+    if (!pad || pad.buffer) continue;
+    try {
+      pad.buffer = await decodeBlob(pad.blob);
+    } catch (err) {
+      console.error(`패드 ${KEY_LABELS[i]} 해석 실패`, err);
+    }
+  }
+}
+
 // ---------- 시작 ----------
 
 async function onStart() {
   resumeAudio();
   state.started = true;
   $('start-screen').hidden = true;
+  await decodeMissing();   // 시작 전에 해석하지 못한 패드가 있으면 다시 시도
 }
 
 function init() {
@@ -424,6 +460,8 @@ function init() {
   document.addEventListener('keydown', onKeyDown);
   // 어디를 눌러도 오디오 컨텍스트를 깨운다 (사파리 대비)
   document.addEventListener('pointerdown', () => { if (state.started) resumeAudio(); }, true);
+
+  loadPads();
 }
 
 document.addEventListener('DOMContentLoaded', init);
