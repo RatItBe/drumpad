@@ -7,6 +7,7 @@
 - 처음 계획에 없던 항목은 `[추가]` 를 붙인다.
 - 사람이 직접 해야 하는 항목은 `[직접]` 을 붙인다. AI 는 이 항목을 대신 체크하지 않는다.
 - 실제로 확인한 항목만 `[x]` 로 체크한다. 무엇으로 확인했는지는 [검증 기록](#검증-기록)에 적는다.
+- 이 순서를 지키게 하는 스킬: `.claude/skills/drumpad-todo-cycle/SKILL.md`
 
 ---
 
@@ -70,7 +71,7 @@
 - [x] 8-5. 수정 모드 동안 마이크를 열어 두고 재사용 (수정 모드를 끄거나 화면을 떠나면 놓음) [변경 C-6]
 
 ## 9단계: 제출 준비 [추가]
-- [ ] 9-1. 프로젝트 전용 스킬 만들기: `drumpad-audio-rules`, `drumpad-todo-cycle`
+- [x] 9-1. 프로젝트 전용 스킬 만들기: `drumpad-audio-rules`, `drumpad-todo-cycle`
 - [ ] 9-2. Anthropic 공개 스킬 `frontend-design` 가져오기 (`.claude/skills/frontend-design/`, Apache 2.0)
 - [ ] 9-3. `frontend-design` 스킬 기준으로 화면 디자인 점검·다듬기 (어두운 바탕 + 파란 강조 하나, 모든 요소 같은 둥글기 같은 "생성된 티" 항목 확인)
 - [ ] 9-4. README용 스크린샷 찍기 (`docs/screenshots/`)
