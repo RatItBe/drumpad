@@ -16,6 +16,10 @@ const PAD_COUNT = KEY_CODES.length;
 
 const MAX_RECORD_MS = 5000;        // 최대 녹음 길이
 
+const DB_NAME = 'voice-drumpad';
+const DB_VERSION = 1;
+const DB_STORE = 'pads';
+
 // ---------- 상태 ----------
 
 const state = {
@@ -28,6 +32,62 @@ const state = {
 
 const $ = (id) => document.getElementById(id);
 const padEls = [];
+
+// ---------- IndexedDB ----------
+
+let dbPromise = null;
+
+function openDb() {
+  if (dbPromise) return dbPromise;
+  dbPromise = new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(DB_STORE)) {
+        db.createObjectStore(DB_STORE, { keyPath: 'index' });
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+  return dbPromise;
+}
+
+function dbRequest(mode, fn) {
+  return openDb().then((db) => new Promise((resolve, reject) => {
+    const tx = db.transaction(DB_STORE, mode);
+    const store = tx.objectStore(DB_STORE);
+    const req = fn(store);
+    tx.oncomplete = () => resolve(req ? req.result : undefined);
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error);
+  }));
+}
+
+const dbGetAll = () => dbRequest('readonly', (s) => s.getAll());
+const dbPut = (record) => dbRequest('readwrite', (s) => s.put(record));
+const dbDelete = (index) => dbRequest('readwrite', (s) => s.delete(index));
+const dbClear = () => dbRequest('readwrite', (s) => s.clear());
+
+// 패드 하나의 현재 상태를 저장 (비어 있으면 삭제)
+async function savePad(index) {
+  const pad = state.pads[index];
+  try {
+    if (pad) {
+      await dbPut({
+        index,
+        blob: pad.blob,
+        start: pad.start,
+        end: pad.end,
+      });
+    } else {
+      await dbDelete(index);
+    }
+  } catch (err) {
+    console.error('저장 실패', err);
+    alert('저장에 실패했습니다. 브라우저 저장 공간을 확인해 주세요.');
+  }
+}
 
 // ---------- 오디오 ----------
 
@@ -332,6 +392,7 @@ async function onRecordingStop() {
   state.pads[i] = { blob, buffer, start: 0, end: buffer.duration };
   renderPad(i);
   closeModal();
+  await savePad(i);
 }
 
 // ---------- 시작 ----------
