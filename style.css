@@ -217,6 +217,14 @@ body.edit-mode .pad-grid { border-color: var(--edit); }
 }
 .modal-box h2 { margin: 0 0 14px; font-size: 18px; }
 
+.menu-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.menu-actions .btn { width: 100%; padding: 12px; font-size: 16px; }
+
 .modal-buttons {
   display: flex;
   gap: 8px;

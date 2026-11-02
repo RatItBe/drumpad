@@ -155,11 +155,18 @@ function buildPads() {
     padEls.push(el);
   }
 
-  // Pointer Events 로 마우스·터치를 한 번에 처리 (중복 재생 방지)
+  // Pointer Events 로 마우스·터치를 한 번에 처리 (중복 재생 방지). 연주는 손가락이 닿는 순간 소리가 나야 한다.
   grid.addEventListener('pointerdown', (e) => {
     const el = e.target.closest('.pad');
     if (!el) return;
     e.preventDefault();
+    if (!state.editMode) pressPad(Number(el.dataset.index));
+  });
+  // 수정 모드의 메뉴 열기는 click 으로. 터치가 끝나면 브라우저가 그 자리에 click 을 한 번 더 보내는데,
+  // pointerdown 에서 창을 열면 그 click 이 방금 뜬 창 위에 떨어져 창이 닫히거나 버튼이 눌린다.
+  grid.addEventListener('click', (e) => {
+    const el = e.target.closest('.pad');
+    if (!el || !state.editMode) return;
     pressPad(Number(el.dataset.index));
   });
   grid.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -185,6 +192,10 @@ function flashPad(i, cls) {
 
 function pressPad(i) {
   if (!state.started) return;
+  if (state.editMode) {
+    openMenu(i);
+    return;
+  }
   playPad(i);
 }
 
@@ -202,6 +213,10 @@ function playPad(i) {
 
 function onKeyDown(e) {
   if (e.repeat) return;
+  if (e.key === 'Escape') {
+    if (state.modal) cancelModal();
+    return;
+  }
   if (!state.started || state.modal) return;
   if (e.ctrlKey || e.metaKey || e.altKey) return;
   const i = KEY_CODES.indexOf(e.code);   // 물리 키 위치: 한글 입력 상태에서도 동작
@@ -237,6 +252,26 @@ function setEditMode(on) {
   const btn = $('edit-toggle-btn');
   btn.classList.toggle('active', on);
   btn.textContent = on ? '수정 끝내기' : '수정 모드';
+  if (!on) {
+    cancelModal();
+  }
+}
+
+function openMenu(i) {
+  const pad = state.pads[i];
+  $('menu-title').textContent = `패드 ${KEY_LABELS[i]} ${pad ? '(채워짐)' : '(비어 있음)'}`;
+  const actions = $('menu-actions');
+  actions.innerHTML = '';
+  const add = (label, cls, fn) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = `btn ${cls || ''}`;
+    b.textContent = label;
+    b.addEventListener('click', fn);
+    actions.appendChild(b);
+  };
+    add('녹음', 'btn-primary', () => { closeModal(); openRecord(i); });
+  openModal('menu');
 }
 
 // ---------- 녹음 ----------
@@ -466,6 +501,7 @@ function init() {
 
   $('start-btn').addEventListener('click', onStart);
   $('edit-toggle-btn').addEventListener('click', () => setEditMode(!state.editMode));
+  $('menu-close-btn').addEventListener('click', closeModal);
   $('record-btn').addEventListener('click', () => {
     if (rec.recording) stopRecording();
     else startRecording();
@@ -473,7 +509,7 @@ function init() {
   $('record-cancel-btn').addEventListener('click', cancelRecording);
 
   // 모달 바깥(어두운 부분) 누르면 닫기
-  for (const name of ['record']) {
+  for (const name of ['menu', 'record']) {
     $(`${name}-modal`).addEventListener('click', (e) => {
       if (e.target === e.currentTarget) cancelModal();
     });
