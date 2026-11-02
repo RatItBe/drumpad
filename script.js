@@ -568,6 +568,7 @@ function openTrim(i, pendingRec) {
     trim.end = pad.end;
     $('trim-title').textContent = `패드 ${KEY_LABELS[i]} 구간 편집`;
   }
+  $('trim-rerecord-btn').hidden = !pendingRec;
   $('trim-hint').textContent = pendingRec
     ? '앞뒤 무음을 자동으로 잘랐습니다. 막대를 끌어 구간을 조절하고, 재생으로 들어본 뒤 저장하세요.'
     : '막대를 끌어 구간을 조절하세요. 원본은 그대로 남습니다.';
@@ -713,6 +714,11 @@ function setupTrimHandles() {
   };
   $('trim-save-btn').addEventListener('click', saveTrim);
   $('trim-cancel-btn').addEventListener('click', closeTrim);
+  $('trim-rerecord-btn').addEventListener('click', () => {
+    const i = trim.index;
+    closeTrim();
+    openRecord(i);
+  });
   window.addEventListener('resize', () => {
     if (state.modal === 'trim') {
       drawWave();
