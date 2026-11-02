@@ -15,6 +15,7 @@ const KEY_LABELS = KEY_CODES.map((c) => c.replace(/^(Key|Digit)/, ''));
 const PAD_COUNT = KEY_CODES.length;
 
 const MAX_RECORD_MS = 5000;        // 최대 녹음 길이
+const TRIM_WINDOW_SEC = 0.01;      // 무음 판정 창 (10ms)
 const TRIM_MIN_GAP_SEC = 0.02;     // 시작점과 끝점 최소 간격
 
 const DB_NAME = 'voice-drumpad';
@@ -139,6 +140,44 @@ function playBuffer(buffer, start, end) {
   const dur = Math.max(0.005, end - start);
   src.start(0, start, dur);
   return src;
+}
+
+// 앞뒤 무음 자동 자르기: 10ms 창의 RMS 가 기준 이하이면 무음
+function findTrim(buffer) {
+  const sr = buffer.sampleRate;
+  const win = Math.max(1, Math.floor(sr * TRIM_WINDOW_SEC));
+  const chCount = buffer.numberOfChannels;
+  const channels = [];
+  for (let c = 0; c < chCount; c++) channels.push(buffer.getChannelData(c));
+  const len = buffer.length;
+  const nWin = Math.ceil(len / win);
+  const rms = new Float32Array(nWin);
+  let peak = 0;
+  for (let w = 0; w < nWin; w++) {
+    const s0 = w * win;
+    const s1 = Math.min(len, s0 + win);
+    let sum = 0;
+    for (let c = 0; c < chCount; c++) {
+      const d = channels[c];
+      for (let i = s0; i < s1; i++) sum += d[i] * d[i];
+    }
+    const v = Math.sqrt(sum / ((s1 - s0) * chCount));
+    rms[w] = v;
+    if (v > peak) peak = v;
+  }
+  const threshold = Math.max(0.004, peak * 0.06);
+  let first = -1;
+  let last = -1;
+  for (let w = 0; w < nWin; w++) {
+    if (rms[w] > threshold) {
+      if (first < 0) first = w;
+      last = w;
+    }
+  }
+  if (first < 0) return [0, buffer.duration];
+  const start = Math.max(0, (first - 1) * win) / sr;
+  const end = Math.min(len, (last + 2) * win) / sr;
+  return [start, Math.max(end, start + TRIM_MIN_GAP_SEC)];
 }
 
 // ---------- 패드 화면 ----------
@@ -493,9 +532,10 @@ async function onRecordingStop() {
   }
   if (state.modal !== 'record' || rec.cancelled) return;
 
-  // 녹음 전체를 그대로 패드에 넣는다
+  // 앞뒤 무음을 잘라 바로 패드에 넣는다
+  const [start, end] = findTrim(buffer);
   const i = rec.index;
-  state.pads[i] = { blob, buffer, start: 0, end: buffer.duration };
+  state.pads[i] = { blob, buffer, start, end };
   renderPad(i);
   closeModal();
   await savePad(i);
