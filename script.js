@@ -309,6 +309,7 @@ function setEditMode(on) {
   if (!on) {
     cancelMove();
     cancelModal();
+    releaseStream();   // 수정 모드를 끄면 마이크를 놓는다 (수정 모드 동안은 열어 둔 채 재사용)
   }
 }
 
@@ -421,7 +422,9 @@ function openRecord(i, keepName) {
   rec.keepName = keepName !== undefined ? keepName : ((state.pads[i] && state.pads[i].name) || '');
   $('record-title').textContent = `패드 ${KEY_LABELS[i]} 녹음`;
   $('record-time').textContent = '0.0 / 5.0초';
-  setRecordUI('idle', '녹음 시작을 누르면 마이크 권한을 요청합니다. 최대 5초.', false);
+  setRecordUI('idle', streamIsLive()
+    ? '녹음 시작을 누르면 바로 녹음됩니다. 최대 5초.'
+    : '녹음 시작을 누르면 마이크를 엽니다 (처음 한 번 권한을 묻습니다). 최대 5초.', false);
   openModal('record');
 }
 
@@ -443,7 +446,7 @@ function micErrorMessage(err) {
 
 async function startRecording() {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    setRecordUI('idle', '이 브라우저에서는 마이크를 쓸 수 없습니다. HTTPS 주소(또는 localhost)로 열어야 합니다.', true);
+    setRecordUI('idle', '이 브라우저에서는 마이크를 쓸 수 없습니다. 최신 크롬이나 사파리로, HTTPS 주소나 내 컴퓨터의 파일로 열어 주세요.', true);
     return;
   }
   if (!window.MediaRecorder) {
@@ -451,17 +454,21 @@ async function startRecording() {
     return;
   }
   resumeAudio();
-  setRecordUI('idle', '마이크 권한을 확인하는 중...', false);
-  let stream;
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  } catch (err) {
-    setRecordUI('idle', micErrorMessage(err), true);
-    return;
-  }
-  if (state.modal !== 'record' || rec.cancelled) {
-    stream.getTracks().forEach((t) => t.stop());
-    return;
+  // 수정 모드 동안 마이크를 열어 두고 재사용한다. 녹음마다 새로 열면
+  // 파일(file://)로 연 크롬이 권한을 기억하지 않아 매번 권한 창이 뜬다.
+  let stream = streamIsLive() ? rec.stream : null;
+  if (!stream) {
+    setRecordUI('idle', '마이크 권한을 확인하는 중...', false);
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (err) {
+      setRecordUI('idle', micErrorMessage(err), true);
+      return;
+    }
+    if (state.modal !== 'record' || rec.cancelled) {
+      stream.getTracks().forEach((t) => t.stop());
+      return;
+    }
   }
   rec.stream = stream;
   rec.mimeType = pickMimeType();
@@ -470,7 +477,7 @@ async function startRecording() {
       ? new MediaRecorder(stream, { mimeType: rec.mimeType })
       : new MediaRecorder(stream);
   } catch (err) {
-    stream.getTracks().forEach((t) => t.stop());
+    releaseStream();
     setRecordUI('idle', `녹음기를 만들지 못했습니다. (${err.name})`, true);
     return;
   }
@@ -506,6 +513,11 @@ function stopRecording() {
   if (rec.recorder && rec.recorder.state !== 'inactive') rec.recorder.stop();
 }
 
+function streamIsLive() {
+  return !!(rec.stream && rec.stream.getTracks().some((t) => t.readyState === 'live'));
+}
+
+// 마이크를 놓는다. 수정 모드를 끌 때, 화면을 떠날 때, 오류가 났을 때만 부른다.
 function releaseStream() {
   if (rec.stream) rec.stream.getTracks().forEach((t) => t.stop());
   rec.stream = null;
@@ -515,7 +527,6 @@ function cancelRecording() {
   rec.cancelled = true;
   clearRecordTimers();
   if (rec.recording) stopRecording();
-  else releaseStream();
   rec.recording = false;
   closeModal();
 }
@@ -523,7 +534,6 @@ function cancelRecording() {
 async function onRecordingStop() {
   clearRecordTimers();
   rec.recording = false;
-  releaseStream();
   if (rec.cancelled) return;
 
   const type = rec.recorder.mimeType || rec.mimeType || 'audio/webm';
@@ -829,6 +839,9 @@ function init() {
   }
 
   document.addEventListener('keydown', onKeyDown);
+  // 탭을 숨기거나 떠나면 마이크를 놓는다. 다시 녹음할 때 한 번 더 묻는 것이 마이크 표시가 남는 것보다 낫다.
+  document.addEventListener('visibilitychange', () => { if (document.hidden && !rec.recording) releaseStream(); });
+  window.addEventListener('pagehide', releaseStream);
   // 어디를 눌러도 오디오 컨텍스트를 깨운다 (사파리 대비)
   document.addEventListener('pointerdown', () => { if (state.started) resumeAudio(); }, true);
 
