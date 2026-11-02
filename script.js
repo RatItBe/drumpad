@@ -19,10 +19,29 @@ const PAD_COUNT = KEY_CODES.length;
 const state = {
   // 각 칸: null 또는 { blob, buffer, start, end }
   pads: new Array(PAD_COUNT).fill(null),
+  audioCtx: null,
+  started: false,
 };
 
 const $ = (id) => document.getElementById(id);
 const padEls = [];
+
+// ---------- 오디오 ----------
+
+function ensureAudioContext() {
+  if (!state.audioCtx) {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    state.audioCtx = new Ctx();
+  }
+  return state.audioCtx;
+}
+
+function resumeAudio() {
+  const ctx = ensureAudioContext();
+  if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
+  return ctx;
+}
 
 // ---------- 패드 화면 ----------
 
@@ -54,8 +73,19 @@ function renderAllPads() {
 
 // ---------- 시작 ----------
 
+async function onStart() {
+  resumeAudio();
+  state.started = true;
+  $('start-screen').hidden = true;
+}
+
 function init() {
   buildPads();
+  ensureAudioContext();    // 사용자 제스처 전엔 suspended 상태로 생성된다
+
+  $('start-btn').addEventListener('click', onStart);
+  // 어디를 눌러도 오디오 컨텍스트를 깨운다 (사파리 대비)
+  document.addEventListener('pointerdown', () => { if (state.started) resumeAudio(); }, true);
 }
 
 document.addEventListener('DOMContentLoaded', init);
