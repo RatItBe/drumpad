@@ -634,6 +634,20 @@ function setupTrimHandles() {
     stopPreview();
     trim.previewSrc = playBuffer(trim.buffer, trim.start, trim.end);
   });
+  const saveTrim = async () => {
+    const i = trim.index;
+    const pad = state.pads[i];
+    if (pad) {
+      pad.start = trim.start;    // 원본은 그대로, 시작·끝점만 저장
+      pad.end = trim.end;
+      renderPad(i);
+      closeTrim();
+      await savePad(i);
+    } else {
+      closeTrim();
+    }
+  };
+  $('trim-save-btn').addEventListener('click', saveTrim);
   $('trim-cancel-btn').addEventListener('click', closeTrim);
   window.addEventListener('resize', () => {
     if (state.modal === 'trim') {
