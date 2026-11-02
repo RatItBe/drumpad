@@ -28,6 +28,7 @@ const state = {
   audioCtx: null,
   started: false,
   editMode: false,
+  moveFrom: -1,        // 위치 바꾸기 중인 패드 번호
   modal: null,         // 'menu' | 'record' | 'trim' | null
 };
 
@@ -193,7 +194,8 @@ function flashPad(i, cls) {
 function pressPad(i) {
   if (!state.started) return;
   if (state.editMode) {
-    openMenu(i);
+    if (state.moveFrom >= 0) doMove(i);
+    else openMenu(i);
     return;
   }
   playPad(i);
@@ -215,6 +217,7 @@ function onKeyDown(e) {
   if (e.repeat) return;
   if (e.key === 'Escape') {
     if (state.modal) cancelModal();
+    else if (state.moveFrom >= 0) cancelMove();
     return;
   }
   if (!state.started || state.modal) return;
@@ -253,6 +256,7 @@ function setEditMode(on) {
   btn.classList.toggle('active', on);
   btn.textContent = on ? '수정 끝내기' : '수정 모드';
   if (!on) {
+    cancelMove();
     cancelModal();
   }
 }
@@ -274,6 +278,7 @@ function openMenu(i) {
     add('녹음', 'btn-primary', () => { closeModal(); openRecord(i); });
   } else {
     add('다시 녹음', 'btn-primary', () => { closeModal(); openRecord(i); });
+    add('위치 바꾸기', '', () => { closeModal(); startMove(i); });
     add('지우기', 'btn-danger', () => { closeModal(); clearPad(i); });
   }
   openModal('menu');
@@ -283,6 +288,33 @@ async function clearPad(i) {
   state.pads[i] = null;
   renderPad(i);
   await savePad(i);
+}
+
+// 위치 바꾸기
+function startMove(i) {
+  state.moveFrom = i;
+  padEls[i].classList.add('move-source');
+  $('move-text').textContent = `패드 ${KEY_LABELS[i]}의 소리를 옮깁니다. 바꿀 자리를 누르세요.`;
+  $('move-banner').hidden = false;
+}
+
+function cancelMove() {
+  if (state.moveFrom >= 0) padEls[state.moveFrom].classList.remove('move-source');
+  state.moveFrom = -1;
+  $('move-banner').hidden = true;
+}
+
+async function doMove(to) {
+  const from = state.moveFrom;
+  cancelMove();
+  if (from === to) return;
+  const a = state.pads[from];
+  state.pads[from] = state.pads[to];
+  state.pads[to] = a;
+  renderPad(from);
+  renderPad(to);
+  await savePad(from);
+  await savePad(to);
 }
 
 // ---------- 녹음 ----------
@@ -512,6 +544,7 @@ function init() {
 
   $('start-btn').addEventListener('click', onStart);
   $('edit-toggle-btn').addEventListener('click', () => setEditMode(!state.editMode));
+  $('move-cancel-btn').addEventListener('click', cancelMove);
   $('menu-close-btn').addEventListener('click', closeModal);
   $('record-btn').addEventListener('click', () => {
     if (rec.recording) stopRecording();
