@@ -279,6 +279,7 @@ function openMenu(i) {
     add('녹음', 'btn-primary', () => { closeModal(); openRecord(i); });
   } else {
     add('다시 녹음', 'btn-primary', () => { closeModal(); openRecord(i); });
+    add('구간 편집', '', () => { closeModal(); openTrim(i); });
     add('위치 바꾸기', '', () => { closeModal(); startMove(i); });
     add('지우기', 'btn-danger', () => { closeModal(); clearPad(i); });
   }
@@ -498,6 +499,79 @@ async function onRecordingStop() {
   await savePad(i);
 }
 
+// ---------- 구간 편집 ----------
+
+const trim = {
+  index: -1,
+  buffer: null,
+  start: 0,
+  end: 0,
+};
+
+function openTrim(i) {
+  trim.index = i;
+    const pad = state.pads[i];
+    if (!pad || !pad.buffer) return;
+    trim.buffer = pad.buffer;
+    trim.start = pad.start;
+    trim.end = pad.end;
+    $('trim-title').textContent = `패드 ${KEY_LABELS[i]} 구간 편집`;
+  openModal('trim');
+  requestAnimationFrame(() => {
+    drawWave();
+  });
+}
+
+function drawWave() {
+  const wrap = $('wave-wrap');
+  const canvas = $('wave-canvas');
+  const dpr = window.devicePixelRatio || 1;
+  const w = wrap.clientWidth;
+  const h = wrap.clientHeight;
+  canvas.width = Math.floor(w * dpr);
+  canvas.height = Math.floor(h * dpr);
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+
+  const buf = trim.buffer;
+  const data = buf.getChannelData(0);
+  const len = data.length;
+  const mid = h / 2;
+  ctx.strokeStyle = '#8fb3ff';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let x = 0; x < w; x++) {
+    const s0 = Math.floor((x / w) * len);
+    const s1 = Math.max(s0 + 1, Math.floor(((x + 1) / w) * len));
+    let min = 1;
+    let max = -1;
+    for (let s = s0; s < s1 && s < len; s++) {
+      const v = data[s];
+      if (v < min) min = v;
+      if (v > max) max = v;
+    }
+    if (min > max) { min = 0; max = 0; }
+    ctx.moveTo(x + 0.5, mid - max * mid * 0.95);
+    ctx.lineTo(x + 0.5, mid - min * mid * 0.95 + 1);
+  }
+  ctx.stroke();
+  ctx.strokeStyle = '#3a3e48';
+  ctx.beginPath();
+  ctx.moveTo(0, mid + 0.5);
+  ctx.lineTo(w, mid + 0.5);
+  ctx.stroke();
+}
+
+function setupTrimHandles() {
+  $('trim-cancel-btn').addEventListener('click', closeModal);
+  window.addEventListener('resize', () => {
+    if (state.modal === 'trim') {
+      drawWave();
+    }
+  });
+}
+
 // ---------- 저장 복원 ----------
 
 async function loadPads() {
@@ -553,6 +627,7 @@ async function onStart() {
 
 function init() {
   buildPads();
+  setupTrimHandles();
   ensureAudioContext();    // 사용자 제스처 전엔 suspended 상태로 생성된다
 
   $('start-btn').addEventListener('click', onStart);
@@ -567,7 +642,7 @@ function init() {
   $('record-cancel-btn').addEventListener('click', cancelRecording);
 
   // 모달 바깥(어두운 부분) 누르면 닫기
-  for (const name of ['menu', 'record']) {
+  for (const name of ['menu', 'record', 'trim']) {
     $(`${name}-modal`).addEventListener('click', (e) => {
       if (e.target === e.currentTarget) cancelModal();
     });
