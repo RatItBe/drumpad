@@ -274,8 +274,15 @@ function openMenu(i) {
     add('녹음', 'btn-primary', () => { closeModal(); openRecord(i); });
   } else {
     add('다시 녹음', 'btn-primary', () => { closeModal(); openRecord(i); });
+    add('지우기', 'btn-danger', () => { closeModal(); clearPad(i); });
   }
   openModal('menu');
+}
+
+async function clearPad(i) {
+  state.pads[i] = null;
+  renderPad(i);
+  await savePad(i);
 }
 
 // ---------- 녹음 ----------
