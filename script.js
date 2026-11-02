@@ -393,6 +393,7 @@ const rec = {
   tickTimer: null,
   stopTimer: null,
   recording: false,
+  keepName: '',
   cancelled: false,
 };
 
@@ -413,9 +414,11 @@ function setRecordUI(phase, message, isError) {
   if (message !== undefined) status.textContent = message;
 }
 
-function openRecord(i) {
+function openRecord(i, keepName) {
   rec.index = i;
   rec.cancelled = false;
+  // 다시 녹음할 때 기존 이름을 편집 화면에 미리 채워 준다
+  rec.keepName = keepName !== undefined ? keepName : ((state.pads[i] && state.pads[i].name) || '');
   $('record-title').textContent = `패드 ${KEY_LABELS[i]} 녹음`;
   $('record-time').textContent = '0.0 / 5.0초';
   setRecordUI('idle', '녹음 시작을 누르면 마이크 권한을 요청합니다. 최대 5초.', false);
@@ -545,7 +548,7 @@ async function onRecordingStop() {
   // 저장을 눌러야 패드에 들어간다.
   const [start, end] = findTrim(buffer);
   closeModal();
-  openTrim(rec.index, { blob, buffer, autoStart: start, autoEnd: end });
+  openTrim(rec.index, { blob, buffer, autoStart: start, autoEnd: end, name: rec.keepName });
 }
 
 // ---------- 구간 편집 ----------
@@ -736,8 +739,9 @@ function setupTrimHandles() {
   $('trim-cancel-btn').addEventListener('click', closeTrim);
   $('trim-rerecord-btn').addEventListener('click', () => {
     const i = trim.index;
+    const typed = $('trim-name').value.trim();
     closeTrim();
-    openRecord(i);
+    openRecord(i, typed);
   });
   window.addEventListener('resize', () => {
     if (state.modal === 'trim') {
