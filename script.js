@@ -114,6 +114,13 @@ function renderAllPads() {
   for (let i = 0; i < PAD_COUNT; i++) renderPad(i);
 }
 
+function flashPad(i, cls) {
+  const el = padEls[i];
+  el.classList.remove('hit', 'shake');
+  void el.offsetWidth; // 애니메이션 재시작
+  el.classList.add(cls);
+}
+
 function pressPad(i) {
   if (!state.started) return;
   playPad(i);
@@ -122,8 +129,10 @@ function pressPad(i) {
 function playPad(i) {
   const pad = state.pads[i];
   if (!pad || !pad.buffer) {
+    flashPad(i, 'shake');
     return;
   }
+  flashPad(i, 'hit');
   playBuffer(pad.buffer, pad.start, pad.end);
 }
 
