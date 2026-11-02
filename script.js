@@ -244,6 +244,7 @@ function closeModal() {
 
 function cancelModal() {
   if (state.modal === 'record') cancelRecording();
+  else if (state.modal === 'trim') closeTrim();
   else closeModal();
 }
 
@@ -508,6 +509,7 @@ const trim = {
   start: 0,
   end: 0,
   dragging: null,     // 'start' | 'end' | null
+  previewSrc: null,
 };
 
 function openTrim(i) {
@@ -523,6 +525,18 @@ function openTrim(i) {
     drawWave();
     layoutHandles();
   });
+}
+
+function closeTrim() {
+  stopPreview();
+  closeModal();
+}
+
+function stopPreview() {
+  if (trim.previewSrc) {
+    try { trim.previewSrc.stop(); } catch (e) { /* 이미 끝남 */ }
+    trim.previewSrc = null;
+  }
 }
 
 function drawWave() {
@@ -616,7 +630,11 @@ function setupTrimHandles() {
   bind($('handle-start'), 'start');
   bind($('handle-end'), 'end');
 
-  $('trim-cancel-btn').addEventListener('click', closeModal);
+  $('trim-play-btn').addEventListener('click', () => {
+    stopPreview();
+    trim.previewSrc = playBuffer(trim.buffer, trim.start, trim.end);
+  });
+  $('trim-cancel-btn').addEventListener('click', closeTrim);
   window.addEventListener('resize', () => {
     if (state.modal === 'trim') {
       drawWave();
