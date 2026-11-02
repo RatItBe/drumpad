@@ -296,6 +296,42 @@ body.edit-mode .pad-grid { border-color: var(--edit); }
   height: 100%;
   display: block;
 }
+.wave-region {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: rgba(63, 123, 217, 0.25);
+  pointer-events: none;
+}
+.handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 28px;                 /* 손가락으로 잡기 쉽게 넓은 영역 */
+  margin-left: -14px;
+  cursor: ew-resize;
+  touch-action: none;
+}
+.handle span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 12px;
+  width: 4px;
+  background: var(--edit);
+  border-radius: 2px;
+}
+.handle::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--edit);
+}
+.handle-start::after { top: 4px; }
+.handle-end::after   { bottom: 4px; }
 
 @media (max-width: 420px) {
   .app-header h1 { font-size: 16px; }

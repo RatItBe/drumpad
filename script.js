@@ -519,6 +519,7 @@ function openTrim(i) {
   openModal('trim');
   requestAnimationFrame(() => {
     drawWave();
+    layoutHandles();
   });
 }
 
@@ -563,11 +564,27 @@ function drawWave() {
   ctx.stroke();
 }
 
+function layoutHandles() {
+  const wrap = $('wave-wrap');
+  const w = wrap.clientWidth;
+  const dur = trim.buffer.duration;
+  const x0 = (trim.start / dur) * w;
+  const x1 = (trim.end / dur) * w;
+  $('handle-start').style.left = `${x0}px`;
+  $('handle-end').style.left = `${x1}px`;
+  const region = $('wave-region');
+  region.style.left = `${x0}px`;
+  region.style.width = `${x1 - x0}px`;
+  $('trim-info').textContent =
+    `${trim.start.toFixed(2)}초 ~ ${trim.end.toFixed(2)}초 (길이 ${(trim.end - trim.start).toFixed(2)}초 / 전체 ${dur.toFixed(2)}초)`;
+}
+
 function setupTrimHandles() {
   $('trim-cancel-btn').addEventListener('click', closeModal);
   window.addEventListener('resize', () => {
     if (state.modal === 'trim') {
       drawWave();
+      layoutHandles();
     }
   });
 }
