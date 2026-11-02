@@ -74,7 +74,7 @@
 - [x] 9-1. 프로젝트 전용 스킬 만들기: `drumpad-audio-rules`, `drumpad-todo-cycle`
 - [x] 9-2. Anthropic 공개 스킬 `frontend-design` 가져오기 (`.claude/skills/frontend-design/`, Apache 2.0)
 - [x] 9-3. `frontend-design` 스킬 기준으로 화면 디자인 점검·다듬기 (어두운 바탕 + 파란 강조 하나, 모든 요소 같은 둥글기 같은 "생성된 티" 항목 확인)
-- [ ] 9-4. README용 스크린샷 찍기 (`docs/screenshots/`)
+- [x] 9-4. README용 스크린샷 찍기 (`docs/screenshots/`)
 - [ ] 9-5. README를 제출 형식 5개 항목으로 다시 쓰기 (만든 이유, 느낀점·결론, 배포 주소 포함)
 - [ ] 9-6. [직접] GitHub Pages 켜고 README 의 배포 주소가 열리는지 확인 (0-2 와 같이)
 - [ ] 9-7. 제출 전 점검: GitHub 에 올라간 것만 보고 README 링크·이미지·배포 주소·TODO 체크가 맞는지 확인
