@@ -252,6 +252,7 @@ function setEditMode(on) {
   state.editMode = on;
   document.body.classList.toggle('edit-mode', on);
   $('edit-banner').hidden = !on;
+  $('clear-all-btn').hidden = !on;
   const btn = $('edit-toggle-btn');
   btn.classList.toggle('active', on);
   btn.textContent = on ? '수정 끝내기' : '수정 모드';
@@ -288,6 +289,18 @@ async function clearPad(i) {
   state.pads[i] = null;
   renderPad(i);
   await savePad(i);
+}
+
+async function clearAll() {
+  if (!confirm('정말 모두 지울까요?')) return;
+  cancelMove();
+  for (let i = 0; i < PAD_COUNT; i++) state.pads[i] = null;
+  renderAllPads();
+  try {
+    await dbClear();
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 // 위치 바꾸기
@@ -544,6 +557,7 @@ function init() {
 
   $('start-btn').addEventListener('click', onStart);
   $('edit-toggle-btn').addEventListener('click', () => setEditMode(!state.editMode));
+  $('clear-all-btn').addEventListener('click', clearAll);
   $('move-cancel-btn').addEventListener('click', cancelMove);
   $('menu-close-btn').addEventListener('click', closeModal);
   $('record-btn').addEventListener('click', () => {
